@@ -1,42 +1,43 @@
-version: '3.8'
 services:
   db:
     image: postgres:16-alpine
+    container_name: contact-db
     environment:
       POSTGRES_USER: contactuser
       POSTGRES_PASSWORD: contactpass
       POSTGRES_DB: contactdb
     volumes:
       - db_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U contactuser"]
+      test: ["CMD-SHELL", "pg_isready -U contactuser -d contactdb"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   api:
     build: ./backend
+    container_name: contact-api
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: contactuser
-      DB_PASSWORD: contactpass
-      DB_NAME: contactdb
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=contactuser
+      - DB_PASSWORD=contactpass
+      - DB_NAME=contactdb
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "3000:3000"
 
   nginx:
     image: nginx:alpine
+    container_name: contact-nginx
     ports:
       - "8080:80"
     volumes:
-      - ./frontend:/usr/share/nginx/html
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - api
 
 volumes:
   db_data:
-
