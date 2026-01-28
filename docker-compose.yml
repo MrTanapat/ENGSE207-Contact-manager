@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+  api:
+    build: ./backend
+    depends_on:
+      - db
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html
